@@ -1,0 +1,19 @@
+# One plugin instance controls one Govee device. Install another instance with
+# a different target name and IP address for each additional light.
+VARIABLE govee_target_name GOVEE
+VARIABLE govee_device_ip 192.168.2.249
+VARIABLE govee_command_port 4003
+VARIABLE govee_listen_port 4002
+VARIABLE govee_bind_address 0.0.0.0
+VARIABLE govee_poll_interval 5.0
+VARIABLE govee_bridge DEFAULT
+
+TARGET GOVEE <%= govee_target_name %>
+
+# Govee's LAN API receives commands on UDP/4003 and sends replies to UDP/4002.
+# Using 4002 as both the read port and command source port creates a connected
+# UDP socket, which also filters telemetry to the configured device.
+INTERFACE <%= govee_target_name %>_INT openc3/interfaces/udp_interface.py <%= govee_device_ip %> <%= govee_command_port %> <%= govee_listen_port %> <%= govee_listen_port %> None 1 10.0 None <%= govee_bind_address %>
+  BRIDGE <%= govee_bridge %>
+  MAP_TARGET <%= govee_target_name %>
+  OPTION PERIODIC_CMD DONT_LOG <%= govee_poll_interval %> "<%= govee_target_name %> GET_STATUS"

@@ -1,0 +1,101 @@
+# Govee Local LAN API
+# Commands are JSON datagrams sent to UDP/4003. Devices return status on
+# UDP/4002. See https://app-h5.govee.com/user-manual/wlan-guide for enabling
+# LAN Control in the Govee Home app.
+
+COMMAND <%= target_name %> GET_STATUS BIG_ENDIAN "Requests the current device state"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"devStatus","data":{}}}'
+
+COMMAND <%= target_name %> ON BIG_ENDIAN "Turns the device on"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"turn","data":{"value":1}}}'
+
+COMMAND <%= target_name %> OFF BIG_ENDIAN "Turns the device off"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"turn","data":{"value":0}}}'
+
+COMMAND <%= target_name %> SET_POWER BIG_ENDIAN "Sets the device power state"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"turn","data":{"value":1}}}'
+  APPEND_PARAMETER VALUE 8 UINT 0 1 1 "Power state"
+    KEY $.msg.data.value
+    STATE OFF 0
+    STATE ON 1
+
+COMMAND <%= target_name %> SET_BRIGHTNESS BIG_ENDIAN "Sets brightness from 0 to 100 percent"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"brightness","data":{"value":100}}}'
+  APPEND_PARAMETER BRIGHTNESS 8 UINT 0 100 100 "Brightness percentage"
+    KEY $.msg.data.value
+    UNITS PERCENT "%"
+
+COMMAND <%= target_name %> SET_RGB BIG_ENDIAN "Sets an RGB color"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"colorwc","data":{"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}'
+  APPEND_PARAMETER RED 8 UINT 0 255 255 "Red channel"
+    KEY $.msg.data.color.r
+  APPEND_PARAMETER GREEN 8 UINT 0 255 255 "Green channel"
+    KEY $.msg.data.color.g
+  APPEND_PARAMETER BLUE 8 UINT 0 255 255 "Blue channel"
+    KEY $.msg.data.color.b
+
+COMMAND <%= target_name %> SET_COLOR_TEMPERATURE BIG_ENDIAN "Sets white color temperature"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"colorwc","data":{"color":{"r":0,"g":0,"b":0},"colorTemInKelvin":4000}}}'
+  APPEND_PARAMETER KELVIN 16 UINT 2000 9000 4000 "Color temperature"
+    KEY $.msg.data.colorTemInKelvin
+    UNITS KELVIN K
+
+COMMAND <%= target_name %> SET_SCENE BIG_ENDIAN "Activates a Govee scene (model support varies)"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"ptReal","data":{"command":["MwUEAAAAAAAAAAAAAAAAAAAAADI="]}}}'
+  APPEND_PARAMETER SCENE 224 STRING "MwUEAAAAAAAAAAAAAAAAAAAAADI=" "Scene to activate"
+    KEY $.msg.data.command[0]
+    STATE SUNRISE "MwUEAAAAAAAAAAAAAAAAAAAAADI="
+    STATE SUNSET "MwUEAQAAAAAAAAAAAAAAAAAAADM="
+    STATE MOVIE "MwUEBAAAAAAAAAAAAAAAAAAAADY="
+    STATE DATING "MwUEBQAAAAAAAAAAAAAAAAAAADc="
+    STATE ROMANTIC "MwUEBwAAAAAAAAAAAAAAAAAAADU="
+    STATE TWINKLE "MwUECAAAAAAAAAAAAAAAAAAAADo="
+    STATE CANDLELIGHT "MwUECQAAAAAAAAAAAAAAAAAAADs="
+    STATE SNOWFLAKE "MwUEDwAAAAAAAAAAAAAAAAAAAD0="
+    STATE ENERGETIC "MwUEEAAAAAAAAAAAAAAAAAAAACI="
+    STATE BREATHE "MwUECgAAAAAAAAAAAAAAAAAAADg="
+    STATE CROSSING "MwUEFQAAAAAAAAAAAAAAAAAAACc="
+
+COMMAND <%= target_name %> SET_SCENE_NUMBER BIG_ENDIAN "Activates a scene by its raw numeric identifier (0-255)"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"ptReal","data":{"command":["MwUEAAAAAAAAAAAAAAAAAAAAADI="]}}}'
+  APPEND_PARAMETER SCENE_NUMBER 224 STRING "0" "Raw scene identifier; accepts decimal or 0x-prefixed hexadecimal"
+    KEY $.msg.data.command[0]
+    WRITE_CONVERSION scene_number_conversion.py
+    CONVERTED_DATA 8 UINT
+
+COMMAND <%= target_name %> PT_REAL BIG_ENDIAN "Sends one pre-encoded ptReal command (advanced/model-specific)"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"ptReal","data":{"command":[""]}}}'
+  APPEND_PARAMETER BASE64_COMMAND 2048 STRING "" "Base64-encoded Govee ptReal command, including checksum when required"
+    KEY $.msg.data.command[0]
+
+TELEMETRY <%= target_name %> STATUS BIG_ENDIAN "Current Govee device state"
+  ACCESSOR openc3/accessors/json_accessor.py
+  TEMPLATE '{"msg":{"cmd":"devStatus","data":{"onOff":0,"brightness":0,"color":{"r":0,"g":0,"b":0},"colorTemInKelvin":0}}}'
+  APPEND_ID_ITEM COMMAND 128 STRING "devStatus" "Govee response type"
+    KEY $.msg.cmd
+  APPEND_ITEM POWER 8 UINT "Power state"
+    KEY $.msg.data.onOff
+    STATE OFF 0
+    STATE ON 1
+  APPEND_ITEM BRIGHTNESS 8 UINT "Brightness percentage"
+    KEY $.msg.data.brightness
+    UNITS PERCENT "%"
+  APPEND_ITEM RED 8 UINT "Red channel"
+    KEY $.msg.data.color.r
+  APPEND_ITEM GREEN 8 UINT "Green channel"
+    KEY $.msg.data.color.g
+  APPEND_ITEM BLUE 8 UINT "Blue channel"
+    KEY $.msg.data.color.b
+  APPEND_ITEM COLOR_TEMPERATURE 16 UINT "White color temperature; zero while RGB mode is active"
+    KEY $.msg.data.colorTemInKelvin
+    UNITS KELVIN K

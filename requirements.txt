@@ -1,0 +1,2 @@
+# No third-party runtime dependencies. COSMOS provides the UDP interface and
+# JSON accessor used by this plugin.

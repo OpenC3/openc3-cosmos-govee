@@ -1,0 +1,20 @@
+SCREEN AUTO AUTO 1.0
+
+TITLE "Govee Local Device"
+
+VERTICALBOX "State"
+  LABELVALUE <%= target_name %> STATUS POWER FORMATTED 20
+  LABELPROGRESSBAR <%= target_name %> STATUS BRIGHTNESS
+  LABELVALUE <%= target_name %> STATUS RED FORMATTED 20
+  LABELVALUE <%= target_name %> STATUS GREEN FORMATTED 20
+  LABELVALUE <%= target_name %> STATUS BLUE FORMATTED 20
+  LABELVALUE <%= target_name %> STATUS COLOR_TEMPERATURE FORMATTED 20
+  LABELVALUE <%= target_name %> STATUS PACKET_TIMEFORMATTED FORMATTED 20
+  LABELVALUE <%= target_name %> STATUS RECEIVED_COUNT FORMATTED 20
+END
+
+HORIZONTALBOX "Controls"
+  BUTTON "On" "api.cmd('<%= target_name %> ON')"
+  BUTTON "Off" "api.cmd('<%= target_name %> OFF')"
+  BUTTON "Refresh" "api.cmd('<%= target_name %> GET_STATUS')"
+END

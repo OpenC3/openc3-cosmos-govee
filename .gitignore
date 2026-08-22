@@ -1,0 +1,4 @@
+node_modules
+*.gem
+__pycache__/
+*.pyc
